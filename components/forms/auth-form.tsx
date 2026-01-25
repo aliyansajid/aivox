@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   sendSignupOTP,
@@ -38,6 +38,8 @@ interface AuthFormProps {
 export const AuthForm = ({ type }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || null;
 
   const isLogin = type === "login";
 
@@ -97,7 +99,9 @@ export const AuthForm = ({ type }: AuthFormProps) => {
 
         if (result.success) {
           toast.success(result.message);
-          router.push("/dashboard");
+          // Redirect to callback URL or role-based dashboard
+          const redirectUrl = callbackUrl || result.redirectUrl || "/";
+          router.push(redirectUrl);
         } else {
           toast.error(result.error);
         }
@@ -109,10 +113,9 @@ export const AuthForm = ({ type }: AuthFormProps) => {
         if (result.success) {
           toast.success(result.message);
 
-          // Redirect to OTP verification page with email and user data
+          // Redirect to OTP verification page with only email (data stored server-side)
           const params = new URLSearchParams({
             email: signupData.email,
-            data: encodeURIComponent(JSON.stringify(signupData)),
           });
           router.push(`/verify-otp?${params.toString()}`);
         } else {
@@ -120,7 +123,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
         }
       }
     } catch (error) {
-      console.error(`${type} error:`, error);
+      // Don't log errors on client side
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -132,7 +135,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
       setIsLoading(true);
       await signInWithOAuth(provider);
     } catch (error) {
-      console.error(`${provider} sign-in error:`, error);
+      // Don't log errors on client side
       toast.error("Something went wrong. Please try again.");
       setIsLoading(false);
     }
@@ -157,7 +160,11 @@ export const AuthForm = ({ type }: AuthFormProps) => {
             {!isLogin ? (
               // Sign-up form with role tabs
               <>
-                <Tabs defaultValue="company" onValueChange={handleTabChange}>
+                <Tabs
+                  defaultValue="company"
+                  onValueChange={handleTabChange}
+                  className="flex gap-6"
+                >
                   <TabsList className="w-full">
                     <TabsTrigger value="company">
                       <Building />
@@ -169,10 +176,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent
-                    value="company"
-                    className="flex flex-col gap-6 mt-6"
-                  >
+                  <TabsContent value="company" className="space-y-6">
                     <CustomFormField
                       control={form.control}
                       fieldType={FormFieldType.INPUT}
@@ -220,10 +224,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                     />
                   </TabsContent>
 
-                  <TabsContent
-                    value="applicant"
-                    className="flex flex-col gap-6 mt-6"
-                  >
+                  <TabsContent value="applicant" className="space-y-6">
                     <CustomFormField
                       control={form.control}
                       fieldType={FormFieldType.INPUT}

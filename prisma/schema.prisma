@@ -53,6 +53,7 @@ enum Recommendation {
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
+  image         String?
   passwordHash  String?   @map("password_hash")
   role          Role
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -205,12 +206,14 @@ model Notification {
 
 // OTP Verification model
 model OTPVerification {
-  id        String   @id @default(uuid())
-  email     String
-  otp       String
-  expiresAt DateTime @map("expires_at")
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  email        String
+  otp          String // Hashed OTP
+  attempts     Int      @default(0)
+  signupData   Json? // Temporary storage for signup data
+  expiresAt    DateTime @map("expires_at")
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([email])
   @@map("otp_verifications")

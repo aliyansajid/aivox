@@ -2,6 +2,8 @@
 
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { headers } from "next/headers";
 import {
   signUpFormSchema,
   forgotPasswordRequestSchema,
@@ -12,10 +14,36 @@ import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { otpVerificationTemplate } from "@/lib/email-templates/otp-verification";
 import { passwordResetTemplate } from "@/lib/email-templates/password-reset";
+import { rateLimiter, RATE_LIMITS } from "@/lib/rate-limiter";
 
-// Generate a 6-digit OTP
+// Constants
+const BCRYPT_ROUNDS = 12;
+const MAX_OTP_ATTEMPTS = 5;
+
+// Helper function to get client identifier (IP + User-Agent)
+async function getClientIdentifier(): Promise<string> {
+  const headersList = await headers();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0] ||
+    headersList.get("x-real-ip") ||
+    "unknown";
+  const userAgent = headersList.get("user-agent") || "unknown";
+  return `${ip}-${userAgent}`;
+}
+
+// Generate a cryptographically secure 6-digit OTP
 function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+// Hash OTP before storing
+async function hashOTP(otp: string): Promise<string> {
+  return bcrypt.hash(otp, 10); // Use fewer rounds for OTP (temporary data)
+}
+
+// Verify OTP hash
+async function verifyOTP(otp: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(otp, hash);
 }
 
 // Server action to send OTP for signup
@@ -23,6 +51,24 @@ export async function sendSignupOTP(
   formData: z.infer<typeof signUpFormSchema>,
 ) {
   try {
+    // Rate limiting check
+    const clientId = await getClientIdentifier();
+    const rateLimit = rateLimiter.check(
+      `signup-${clientId}`,
+      RATE_LIMITS.OTP_SEND.maxRequests,
+      RATE_LIMITS.OTP_SEND.windowMs,
+    );
+
+    if (!rateLimit.success) {
+      const minutesUntilReset = rateLimiter.getMinutesUntilReset(
+        rateLimit.resetTime,
+      );
+      return {
+        success: false,
+        error: `Too many signup attempts. Please try again in ${minutesUntilReset} minutes.`,
+      };
+    }
+
     // Server-side validation
     const validatedData = signUpFormSchema.parse(formData);
 
@@ -45,14 +91,18 @@ export async function sendSignupOTP(
 
     // Generate OTP
     const otp = generateOTP();
+    const hashedOTP = await hashOTP(otp);
 
     // Store OTP in database with 5-minute expiry
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
+    // Store signup data server-side (not in URL)
     await prisma.oTPVerification.create({
       data: {
         email: validatedData.email,
-        otp,
+        otp: hashedOTP,
+        attempts: 0,
+        signupData: validatedData as any, // Store signup data securely
         expiresAt,
       },
     });
@@ -89,7 +139,10 @@ export async function sendSignupOTP(
       };
     }
 
-    console.error("Error in sendSignupOTP:", error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error in sendSignupOTP:", error);
+    }
     return {
       success: false,
       error: "Something went wrong. Please try again.",
@@ -101,14 +154,12 @@ export async function sendSignupOTP(
 export async function verifyOTPAndRegister(
   email: string,
   otp: string,
-  userData: z.infer<typeof signUpFormSchema>,
 ) {
   try {
     // Find OTP record
     const otpRecord = await prisma.oTPVerification.findFirst({
       where: {
         email,
-        otp,
         verified: false,
       },
       orderBy: {
@@ -131,6 +182,40 @@ export async function verifyOTPAndRegister(
       };
     }
 
+    // Check OTP attempts (prevent brute force)
+    if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
+      return {
+        success: false,
+        error: "Too many failed attempts. Please request a new code.",
+      };
+    }
+
+    // Verify hashed OTP
+    const isValidOTP = await verifyOTP(otp, otpRecord.otp);
+
+    if (!isValidOTP) {
+      // Increment attempts
+      await prisma.oTPVerification.update({
+        where: { id: otpRecord.id },
+        data: { attempts: otpRecord.attempts + 1 },
+      });
+
+      return {
+        success: false,
+        error: `Invalid verification code. ${MAX_OTP_ATTEMPTS - otpRecord.attempts - 1} attempts remaining.`,
+      };
+    }
+
+    // Get signup data from database (not from URL)
+    const userData = otpRecord.signupData as z.infer<typeof signUpFormSchema>;
+
+    if (!userData) {
+      return {
+        success: false,
+        error: "Signup data not found. Please sign up again.",
+      };
+    }
+
     // Check if user already exists (double-check)
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -143,38 +228,42 @@ export async function verifyOTPAndRegister(
       };
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(userData.password, 10);
+    // Use transaction for atomic user creation
+    const user = await prisma.$transaction(async (tx) => {
+      // Hash password with stronger rounds
+      const passwordHash = await bcrypt.hash(userData.password, BCRYPT_ROUNDS);
 
-    // Create user with company or applicant profile
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        role: userData.role.toUpperCase() as "COMPANY" | "APPLICANT",
-        ...(userData.role === "company"
-          ? {
-              company: {
-                create: {
-                  name: userData.companyName!,
-                  website: userData.website || null,
+      // Create user with company or applicant profile
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          role: userData.role.toUpperCase() as "COMPANY" | "APPLICANT",
+          ...(userData.role === "company"
+            ? {
+                company: {
+                  create: {
+                    name: userData.companyName!,
+                    website: userData.website || null,
+                  },
                 },
-              },
-            }
-          : {
-              applicant: {
-                create: {
-                  fullName: userData.fullName!,
+              }
+            : {
+                applicant: {
+                  create: {
+                    fullName: userData.fullName!,
+                  },
                 },
-              },
-            }),
-      },
-    });
+              }),
+        },
+      });
 
-    // Mark OTP as verified
-    await prisma.oTPVerification.update({
-      where: { id: otpRecord.id },
-      data: { verified: true },
+      // Mark OTP as verified and delete it
+      await tx.oTPVerification.deleteMany({
+        where: { email },
+      });
+
+      return newUser;
     });
 
     return {
@@ -184,7 +273,10 @@ export async function verifyOTPAndRegister(
       role: user.role,
     };
   } catch (error) {
-    console.error("Error in verifyOTPAndRegister:", error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error in verifyOTPAndRegister:", error);
+    }
     return {
       success: false,
       error: "Failed to create account. Please try again.",
@@ -195,6 +287,24 @@ export async function verifyOTPAndRegister(
 // Server action for credentials login
 export async function loginWithCredentials(email: string, password: string) {
   try {
+    // Rate limiting check
+    const clientId = await getClientIdentifier();
+    const rateLimit = rateLimiter.check(
+      `login-${clientId}`,
+      RATE_LIMITS.LOGIN.maxRequests,
+      RATE_LIMITS.LOGIN.windowMs,
+    );
+
+    if (!rateLimit.success) {
+      const minutesUntilReset = rateLimiter.getMinutesUntilReset(
+        rateLimit.resetTime,
+      );
+      return {
+        success: false,
+        error: `Too many login attempts. Please try again in ${minutesUntilReset} minutes.`,
+      };
+    }
+
     const { signIn } = await import("@/auth");
 
     const result = await signIn("credentials", {
@@ -210,12 +320,25 @@ export async function loginWithCredentials(email: string, password: string) {
       };
     }
 
+    // Get user to determine redirect URL
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { role: true },
+    });
+
+    const redirectUrl =
+      user?.role === "COMPANY" ? "/company" : "/applicant";
+
     return {
       success: true,
       message: "Logged in successfully",
+      redirectUrl,
     };
   } catch (error) {
-    console.error("Login error:", error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Login error:", error);
+    }
     return {
       success: false,
       error: "Invalid email or password",
@@ -233,7 +356,10 @@ export async function signInWithOAuth(provider: "google" | "linkedin") {
       success: true,
     };
   } catch (error) {
-    console.error(`${provider} sign-in error:`, error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error(`${provider} sign-in error:`, error);
+    }
     return {
       success: false,
       error: "Failed to sign in. Please try again.",
@@ -257,6 +383,9 @@ export async function resendOTP(email: string) {
       };
     }
 
+    // Preserve signup data from the previous OTP record
+    const signupData = latestOTP.signupData;
+
     // Delete existing OTPs
     await prisma.oTPVerification.deleteMany({
       where: { email },
@@ -264,21 +393,28 @@ export async function resendOTP(email: string) {
 
     // Generate new OTP
     const otp = generateOTP();
+    const hashedOTP = await hashOTP(otp);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await prisma.oTPVerification.create({
       data: {
         email,
-        otp,
+        otp: hashedOTP,
+        attempts: 0,
+        signupData: signupData || undefined,
         expiresAt,
       },
     });
+
+    // Get name for email personalization
+    const userData = signupData as any;
+    const name = userData?.role === "company" ? userData?.companyName : userData?.fullName;
 
     // Send email
     const emailResult = await sendEmail({
       to: email,
       subject: "Verify Your Email - AIVOX",
-      html: otpVerificationTemplate(otp),
+      html: otpVerificationTemplate(otp, name),
     });
 
     if (!emailResult.success) {
@@ -293,7 +429,10 @@ export async function resendOTP(email: string) {
       message: "Verification code resent to your email",
     };
   } catch (error) {
-    console.error("Error in resendOTP:", error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error in resendOTP:", error);
+    }
     return {
       success: false,
       error: "Failed to resend code. Please try again.",
@@ -306,6 +445,24 @@ export async function sendForgotPasswordOTP(
   formData: z.infer<typeof forgotPasswordRequestSchema>,
 ) {
   try {
+    // Rate limiting check
+    const clientId = await getClientIdentifier();
+    const rateLimit = rateLimiter.check(
+      `password-reset-${clientId}`,
+      RATE_LIMITS.PASSWORD_RESET.maxRequests,
+      RATE_LIMITS.PASSWORD_RESET.windowMs,
+    );
+
+    if (!rateLimit.success) {
+      const minutesUntilReset = rateLimiter.getMinutesUntilReset(
+        rateLimit.resetTime,
+      );
+      return {
+        success: false,
+        error: `Too many password reset attempts. Please try again in ${minutesUntilReset} minutes.`,
+      };
+    }
+
     // Server-side validation
     const validatedData = forgotPasswordRequestSchema.parse(formData);
 
@@ -324,6 +481,7 @@ export async function sendForgotPasswordOTP(
 
       // Generate OTP
       const otp = generateOTP();
+      const hashedOTP = await hashOTP(otp);
 
       // Store OTP in database with 10-minute expiry (longer for password reset)
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -331,7 +489,8 @@ export async function sendForgotPasswordOTP(
       await prisma.oTPVerification.create({
         data: {
           email: validatedData.email,
-          otp,
+          otp: hashedOTP,
+          attempts: 0,
           expiresAt,
         },
       });
@@ -358,7 +517,10 @@ export async function sendForgotPasswordOTP(
       };
     }
 
-    console.error("Error in sendForgotPasswordOTP:", error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error in sendForgotPasswordOTP:", error);
+    }
     return {
       success: false,
       error: "Something went wrong. Please try again.",
@@ -378,7 +540,6 @@ export async function verifyForgotPasswordOTP(
     const otpRecord = await prisma.oTPVerification.findFirst({
       where: {
         email: validatedData.email,
-        otp: validatedData.otp,
         verified: false,
       },
       orderBy: {
@@ -401,6 +562,36 @@ export async function verifyForgotPasswordOTP(
       };
     }
 
+    // Check OTP attempts (prevent brute force)
+    if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
+      return {
+        success: false,
+        error: "Too many failed attempts. Please request a new code.",
+      };
+    }
+
+    // Verify hashed OTP
+    const isValidOTP = await verifyOTP(validatedData.otp, otpRecord.otp);
+
+    if (!isValidOTP) {
+      // Increment attempts
+      await prisma.oTPVerification.update({
+        where: { id: otpRecord.id },
+        data: { attempts: otpRecord.attempts + 1 },
+      });
+
+      return {
+        success: false,
+        error: `Invalid verification code. ${MAX_OTP_ATTEMPTS - otpRecord.attempts - 1} attempts remaining.`,
+      };
+    }
+
+    // Mark OTP as verified
+    await prisma.oTPVerification.update({
+      where: { id: otpRecord.id },
+      data: { verified: true },
+    });
+
     return {
       success: true,
       message: "Verification code is valid",
@@ -413,7 +604,10 @@ export async function verifyForgotPasswordOTP(
       };
     }
 
-    console.error("Error in verifyForgotPasswordOTP:", error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error in verifyForgotPasswordOTP:", error);
+    }
     return {
       success: false,
       error: "Something went wrong. Please try again.",
@@ -429,12 +623,11 @@ export async function resetPassword(
     // Server-side validation
     const validatedData = resetPasswordSchema.parse(formData);
 
-    // Find OTP record
+    // Find OTP record - must be verified
     const otpRecord = await prisma.oTPVerification.findFirst({
       where: {
         email: validatedData.email,
-        otp: validatedData.otp,
-        verified: false,
+        verified: true,
       },
       orderBy: {
         createdAt: "desc",
@@ -444,7 +637,7 @@ export async function resetPassword(
     if (!otpRecord) {
       return {
         success: false,
-        error: "Invalid verification code",
+        error: "Invalid or unverified code. Please verify your code first.",
       };
     }
 
@@ -453,6 +646,16 @@ export async function resetPassword(
       return {
         success: false,
         error: "Verification code has expired. Please start over.",
+      };
+    }
+
+    // Verify hashed OTP
+    const isValidOTP = await verifyOTP(validatedData.otp, otpRecord.otp);
+
+    if (!isValidOTP) {
+      return {
+        success: false,
+        error: "Invalid verification code",
       };
     }
 
@@ -468,18 +671,24 @@ export async function resetPassword(
       };
     }
 
-    // Hash new password
-    const newPasswordHash = await bcrypt.hash(validatedData.password, 10);
+    // Use transaction for atomic password update and OTP deletion
+    await prisma.$transaction(async (tx) => {
+      // Hash new password with stronger rounds
+      const newPasswordHash = await bcrypt.hash(
+        validatedData.password,
+        BCRYPT_ROUNDS,
+      );
 
-    // Update user password
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { passwordHash: newPasswordHash },
-    });
+      // Update user password
+      await tx.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newPasswordHash },
+      });
 
-    // Mark OTP as verified and delete it
-    await prisma.oTPVerification.deleteMany({
-      where: { email: validatedData.email },
+      // Delete OTP record
+      await tx.oTPVerification.deleteMany({
+        where: { email: validatedData.email },
+      });
     });
 
     return {
@@ -494,7 +703,10 @@ export async function resetPassword(
       };
     }
 
-    console.error("Error in resetPassword:", error);
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error in resetPassword:", error);
+    }
     return {
       success: false,
       error: "Failed to reset password. Please try again.",

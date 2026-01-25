@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { Role } from "@/app/generated/prisma";
+import { loginFormSchema } from "./schemas";
 
 class InvalidLoginError extends CredentialsSignin {
   code = "Invalid email or password";
@@ -23,47 +24,57 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        try {
+          // Validate credentials using Zod schema
+          const validatedData = loginFormSchema.parse({
+            email: credentials?.email,
+            password: credentials?.password,
+          });
+
+          const { email, password } = validatedData;
+
+          // Find user by email with related data
+          const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+              company: true,
+              applicant: true,
+            },
+          });
+
+          // Dummy hash to prevent timing attacks
+          // Always perform bcrypt comparison even if user doesn't exist
+          const dummyHash =
+            "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYCxQ6tN8Eu";
+          const passwordHash = user?.passwordHash || dummyHash;
+
+          // Verify password using bcrypt (constant time operation)
+          const isValidPassword = await compare(password, passwordHash);
+
+          // Check if user exists, has a password, and password is valid
+          if (!user || !user.passwordHash || !isValidPassword) {
+            throw new InvalidLoginError();
+          }
+
+          // Return user object with all required data for session
+          return {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            image: user.image,
+            name:
+              user.role === "COMPANY"
+                ? user.company?.name
+                : user.applicant?.fullName,
+          };
+        } catch (error) {
+          // Don't log sensitive errors in production
+          if (process.env.NODE_ENV === "development") {
+            console.error("Authorization error:", error);
+          }
           throw new InvalidLoginError();
         }
-
-        const email = credentials.email as string;
-        const password = credentials.password as string;
-
-        // Find user by email
-        const user = await prisma.user.findUnique({
-          where: { email },
-          include: {
-            company: true,
-            applicant: true,
-          },
-        });
-
-        if (!user || !user.passwordHash) {
-          throw new InvalidLoginError();
-        }
-
-        // Verify password
-        const isValidPassword = await compare(password, user.passwordHash);
-        if (!isValidPassword) {
-          throw new InvalidLoginError();
-        }
-
-        // Return user object
-        return {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          name:
-            user.role === "COMPANY"
-              ? user.company?.name
-              : user.applicant?.fullName,
-        };
       },
     }),
   ],
@@ -79,6 +90,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Check if user exists
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
+            include: {
+              company: true,
+              applicant: true,
+            },
           });
 
           if (!existingUser) {
@@ -88,6 +103,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             const newUser = await prisma.user.create({
               data: {
                 email: user.email,
+                image: user.image,
                 role: Role.APPLICANT,
                 applicant: {
                   create: {
@@ -97,14 +113,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               },
             });
 
+            // Set user data for JWT
             user.id = newUser.id;
+            user.role = newUser.role;
+            user.name = user.name || "Unknown User";
           } else {
+            // Update image if user exists and it changed
+            if (user.image && existingUser.image !== user.image) {
+              await prisma.user.update({
+                where: { id: existingUser.id },
+                data: { image: user.image },
+              });
+            }
+
+            // Set user data from database for JWT
             user.id = existingUser.id;
+            user.role = existingUser.role;
+            user.name =
+              existingUser.role === "COMPANY"
+                ? existingUser.company?.name
+                : existingUser.applicant?.fullName;
           }
 
           return true;
         } catch (error) {
-          console.error("Error during OAuth sign-in:", error);
+          // Don't log sensitive errors in production
+          if (process.env.NODE_ENV === "development") {
+            console.error("Error during OAuth sign-in:", error);
+          }
           return false;
         }
       }
@@ -115,6 +151,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
       }
       return token;
     },
@@ -122,6 +161,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as Role;
+        session.user.name = token.name as string | null;
+        session.user.email = token.email as string;
+        session.user.image = token.picture as string | null;
       }
       return session;
     },
@@ -132,5 +174,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
   },
 });

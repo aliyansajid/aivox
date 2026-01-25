@@ -84,7 +84,7 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#fffffe]/80 dark:bg-[#0e0e0e]/80 backdrop-blur-md border-b border-black/8 dark:border-white/8">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#ff480e] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight text-[#0e0e0e] dark:text-[#fffffe]">
@@ -110,9 +110,9 @@ export default function Home() {
             >
               Pricing
             </a>
-            <button className="relative px-5 py-2.5 bg-[#ff480e] text-white rounded-full font-medium text-sm overflow-hidden group">
+            <button className="relative px-5 py-2.5 bg-primary text-white rounded-full font-medium text-sm overflow-hidden group">
               <span className="relative z-10">Get Started</span>
-              <span className="absolute inset-0 bg-linear-to-r from-[#ff480e] via-[#ff6b3d] to-[#ff480e] -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></span>
+              <span className="absolute inset-0 bg-linear-to-r from-primary via-[#ff6b3d] to-primary -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></span>
             </button>
           </div>
         </div>
@@ -122,19 +122,19 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center justify-center px-6 pt-24 pb-16 overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-[#ff480e]/10 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse-slow"></div>
           <div
-            className="absolute bottom-20 right-10 w-96 h-96 bg-[#ff480e]/5 rounded-full blur-3xl animate-pulse-slow"
+            className="absolute bottom-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"
             style={{ animationDelay: "1s" }}
           ></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-linear-to-r from-[#ff480e]/5 to-transparent rounded-full blur-3xl animate-spin-slow"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-linear-to-r from-primary/5 to-transparent rounded-full blur-3xl animate-spin-slow"></div>
         </div>
 
         <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#ff480e]/10 rounded-full mb-8 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-8 animate-fade-in-up">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff480e] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff480e]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </span>
             <span className="text-sm font-medium text-[#0e0e0e] dark:text-[#fffffe]">
               AI-Powered Recruitment
@@ -162,12 +162,12 @@ export default function Home() {
             className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up"
             style={{ animationDelay: "0.3s" }}
           >
-            <button className="relative px-8 py-4 bg-[#ff480e] text-white rounded-full font-semibold text-base overflow-hidden group flex items-center gap-2">
+            <button className="relative px-8 py-4 bg-primary text-white rounded-full font-semibold text-base overflow-hidden group flex items-center gap-2">
               <span className="relative z-10 flex items-center gap-2">
                 Start Free Trial
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
-              <span className="absolute inset-0 bg-linear-to-r from-[#ff480e] via-[#ff6b3d] to-[#ff480e] -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></span>
+              <span className="absolute inset-0 bg-linear-to-r from-primary via-[#ff6b3d] to-primary -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></span>
             </button>
             <button className="relative px-8 py-4 bg-transparent border-2 border-[#0e0e0e] dark:border-[#fffffe] text-[#0e0e0e] dark:text-[#fffffe] rounded-full font-semibold text-base overflow-hidden group flex items-center gap-2">
               <span className="relative z-10 flex items-center gap-2">
@@ -311,10 +311,10 @@ export default function Home() {
             ].map((feature, index) => (
               <div
                 key={index}
-                className="group p-8 bg-gray-50 dark:bg-[#1f2124] rounded-3xl border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:shadow-xl hover:-translate-y-2 animate-fade-in-up"
+                className="group p-8 bg-gray-50 dark:bg-[#1f2124] rounded-3xl border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-2 animate-fade-in-up"
                 style={{ animationDelay: feature.delay }}
               >
-                <div className="w-12 h-12 bg-[#ff480e]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform">
                   <feature.icon className="w-6 h-6 text-primary" />
                 </div>
                 <h3 className="text-2xl font-bold text-[#0e0e0e] dark:text-[#fffffe] mb-3">
@@ -345,11 +345,11 @@ export default function Home() {
 
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8">
           {/* Step 1 */}
-          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#ff480e]/5 rounded-full blur-3xl group-hover:bg-[#ff480e]/10 transition-all"></div>
+          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all"></div>
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-6">
-                <div className="w-14 h-14 bg-linear-to-br from-[#ff480e] to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                <div className="w-14 h-14 bg-linear-to-br from-primary to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
                   01
                 </div>
                 <FileText className="w-16 h-16 text-primary/20 group-hover:text-primary/30 transition-colors group-hover:scale-110 group-hover:rotate-6" />
@@ -366,7 +366,7 @@ export default function Home() {
                   (tag, i) => (
                     <span
                       key={i}
-                      className="px-3 py-1 bg-[#ff480e]/10 text-primary text-sm rounded-full"
+                      className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full"
                     >
                       {tag}
                     </span>
@@ -377,11 +377,11 @@ export default function Home() {
           </div>
 
           {/* Step 2 */}
-          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#ff480e]/5 rounded-full blur-3xl group-hover:bg-[#ff480e]/10 transition-all"></div>
+          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all"></div>
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-6">
-                <div className="w-14 h-14 bg-linear-to-br from-[#ff480e] to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                <div className="w-14 h-14 bg-linear-to-br from-primary to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
                   02
                 </div>
                 <Zap className="w-16 h-16 text-primary/20 group-hover:text-primary/30 transition-colors group-hover:scale-110 group-hover:rotate-6" />
@@ -399,7 +399,7 @@ export default function Home() {
                   (tag, i) => (
                     <span
                       key={i}
-                      className="px-3 py-1 bg-[#ff480e]/10 text-primary text-sm rounded-full"
+                      className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full"
                     >
                       {tag}
                     </span>
@@ -410,11 +410,11 @@ export default function Home() {
           </div>
 
           {/* Step 3 */}
-          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#ff480e]/5 rounded-full blur-3xl group-hover:bg-[#ff480e]/10 transition-all"></div>
+          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all"></div>
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-6">
-                <div className="w-14 h-14 bg-linear-to-br from-[#ff480e] to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                <div className="w-14 h-14 bg-linear-to-br from-primary to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
                   03
                 </div>
                 <MessageSquare className="w-16 h-16 text-primary/20 group-hover:text-primary/30 transition-colors group-hover:scale-110 group-hover:rotate-6" />
@@ -431,7 +431,7 @@ export default function Home() {
                 {["Natural Flow", "Custom Q&A", "24/7 Access"].map((tag, i) => (
                   <span
                     key={i}
-                    className="px-3 py-1 bg-[#ff480e]/10 text-primary text-sm rounded-full"
+                    className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full"
                   >
                     {tag}
                   </span>
@@ -441,11 +441,11 @@ export default function Home() {
           </div>
 
           {/* Step 4 */}
-          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#ff480e]/5 rounded-full blur-3xl group-hover:bg-[#ff480e]/10 transition-all"></div>
+          <div className="group relative bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:shadow-2xl hover:-translate-y-2 overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all"></div>
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-6">
-                <div className="w-14 h-14 bg-linear-to-br from-[#ff480e] to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                <div className="w-14 h-14 bg-linear-to-br from-primary to-[#ff6b3d] text-white rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
                   04
                 </div>
                 <BarChart3 className="w-16 h-16 text-primary/20 group-hover:text-primary/30 transition-colors group-hover:scale-110 group-hover:rotate-6" />
@@ -462,7 +462,7 @@ export default function Home() {
                 {["Full Reports", "Comparisons", "Quick Hire"].map((tag, i) => (
                   <span
                     key={i}
-                    className="px-3 py-1 bg-[#ff480e]/10 text-primary text-sm rounded-full"
+                    className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full"
                   >
                     {tag}
                   </span>
@@ -511,13 +511,13 @@ export default function Home() {
             ].map((testimonial, index) => (
               <div
                 key={index}
-                className="p-8 bg-gray-50 dark:bg-[#1f2124] rounded-3xl border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:scale-105"
+                className="p-8 bg-gray-50 dark:bg-[#1f2124] rounded-3xl border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:scale-105"
               >
                 <div className="flex gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star
                       key={i}
-                      className="w-5 h-5 fill-[#ff480e] text-primary"
+                      className="w-5 h-5 fill-primary text-primary"
                     />
                   ))}
                 </div>
@@ -553,7 +553,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {/* Starter Plan */}
-            <div className="bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:scale-105">
+            <div className="bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:scale-105">
               <h3 className="text-2xl font-bold text-[#0e0e0e] dark:text-[#fffffe] mb-2">
                 Starter
               </h3>
@@ -602,7 +602,7 @@ export default function Home() {
             </div>
 
             {/* Professional Plan */}
-            <div className="bg-[#ff480e] rounded-3xl p-8 relative transform md:scale-105 shadow-2xl">
+            <div className="bg-primary rounded-3xl p-8 relative transform md:scale-105 shadow-2xl">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0e0e0e] text-white px-4 py-1 rounded-full text-sm font-semibold">
                 Most Popular
               </div>
@@ -643,7 +643,7 @@ export default function Home() {
             </div>
 
             {/* Enterprise Plan */}
-            <div className="bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-[#ff480e]/50 transition-all hover:scale-105">
+            <div className="bg-white dark:bg-[#0e0e0e] rounded-3xl p-8 border border-black/8 dark:border-white/8 hover:border-primary/50 transition-all hover:scale-105">
               <h3 className="text-2xl font-bold text-[#0e0e0e] dark:text-[#fffffe] mb-2">
                 Enterprise
               </h3>
@@ -747,7 +747,7 @@ export default function Home() {
             ].map((faq, index) => (
               <div
                 key={index}
-                className="border border-black/8 dark:border-white/8 rounded-2xl overflow-hidden bg-gray-50 dark:bg-[#1f2124] hover:border-[#ff480e]/50 transition-all"
+                className="border border-black/8 dark:border-white/8 rounded-2xl overflow-hidden bg-gray-50 dark:bg-[#1f2124] hover:border-primary/50 transition-all"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
@@ -783,7 +783,7 @@ export default function Home() {
       <section className="py-24 px-6 bg-[#0e0e0e] dark:bg-[#1f2124] relative overflow-hidden">
         {/* Grid Pattern Overlay */}
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-        <div className="absolute inset-0 bg-linear-to-r from-[#ff480e]/10 via-transparent to-[#ff480e]/10"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-primary/10 via-transparent to-primary/10"></div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-5xl md:text-6xl font-bold tracking-[-0.06em] text-[#fffffe] mb-6">
@@ -793,12 +793,12 @@ export default function Home() {
             Join leading companies using AI to build better teams faster.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className="relative px-8 py-4 bg-[#ff480e] text-white rounded-full font-semibold text-base overflow-hidden group flex items-center gap-2">
+            <button className="relative px-8 py-4 bg-primary text-white rounded-full font-semibold text-base overflow-hidden group flex items-center gap-2">
               <span className="relative z-10 flex items-center gap-2">
                 Get Started Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
-              <span className="absolute inset-0 bg-linear-to-r from-[#ff480e] via-[#ff6b3d] to-[#ff480e] -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></span>
+              <span className="absolute inset-0 bg-linear-to-r from-primary via-[#ff6b3d] to-primary -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></span>
             </button>
             <button className="relative px-8 py-4 bg-transparent border-2 border-[#fffffe] text-[#fffffe] rounded-full font-semibold text-base overflow-hidden group">
               <span className="relative z-10">Schedule Demo</span>
@@ -817,7 +817,7 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-[#ff480e] rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold tracking-tight text-[#0e0e0e] dark:text-[#fffffe]">
