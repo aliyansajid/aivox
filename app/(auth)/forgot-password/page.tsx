@@ -26,7 +26,7 @@ import {
   sendForgotPasswordOTP,
   verifyForgotPasswordOTP,
   resetPassword,
-} from "@/app/actions/auth";
+} from "@/app/actions/auth-actions";
 import {
   Card,
   CardHeader,

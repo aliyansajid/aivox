@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { verifyOTPAndRegister, resendOTP } from "@/app/actions/auth";
+import { verifyOTPAndRegister, resendOTP } from "@/app/actions/auth-actions";
 import { toast } from "sonner";
 import {
   InputOTP,

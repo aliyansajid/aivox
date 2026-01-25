@@ -12,7 +12,7 @@ import {
   sendSignupOTP,
   loginWithCredentials,
   signInWithOAuth,
-} from "@/app/actions/auth";
+} from "@/app/actions/auth-actions";
 import {
   Card,
   CardHeader,
