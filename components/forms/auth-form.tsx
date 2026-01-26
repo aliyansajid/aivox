@@ -98,7 +98,6 @@ export const AuthForm = ({ type }: AuthFormProps) => {
         );
 
         if (result.success) {
-          toast.success(result.message);
           // Redirect to callback URL or role-based dashboard
           const redirectUrl = callbackUrl || result.redirectUrl || "/";
           router.push(redirectUrl);
@@ -133,7 +132,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
   async function handleOAuthSignIn(provider: "google" | "linkedin") {
     try {
       setIsLoading(true);
-      await signInWithOAuth(provider);
+      await signInWithOAuth(provider, callbackUrl);
     } catch (error) {
       // Don't log errors on client side
       toast.error("Something went wrong. Please try again.");

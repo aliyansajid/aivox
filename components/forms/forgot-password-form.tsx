@@ -92,7 +92,6 @@ export const ForgotPasswordForm = () => {
         toast.error(result.error);
       }
     } catch (error) {
-      console.error("Email submit error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -121,7 +120,6 @@ export const ForgotPasswordForm = () => {
         setOtpValue("");
       }
     } catch (error) {
-      console.error("OTP submit error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsVerifying(false);
@@ -148,7 +146,6 @@ export const ForgotPasswordForm = () => {
         toast.error(result.error);
       }
     } catch (error) {
-      console.error("Password reset error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -168,7 +165,6 @@ export const ForgotPasswordForm = () => {
         toast.error(result.error);
       }
     } catch (error) {
-      console.error("Resend OTP error:", error);
       toast.error("Failed to resend code. Please try again.");
     } finally {
       setIsResending(false);

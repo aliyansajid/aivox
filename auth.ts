@@ -43,17 +43,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
           });
 
-          // Dummy hash to prevent timing attacks
-          // Always perform bcrypt comparison even if user doesn't exist
-          const dummyHash =
-            "$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYCxQ6tN8Eu";
-          const passwordHash = user?.passwordHash || dummyHash;
+          // Check if user and passwordHash exist BEFORE comparing
+          if (!user || !user.passwordHash) {
+            throw new InvalidLoginError();
+          }
 
-          // Verify password using bcrypt (constant time operation)
-          const isValidPassword = await compare(password, passwordHash);
+          const isValidPassword = await compare(password, user.passwordHash);
 
-          // Check if user exists, has a password, and password is valid
-          if (!user || !user.passwordHash || !isValidPassword) {
+          if (!isValidPassword) {
             throw new InvalidLoginError();
           }
 
@@ -69,7 +66,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 : user.applicant?.fullName,
           };
         } catch (error) {
-          // Don't log sensitive errors in production
           if (process.env.NODE_ENV === "development") {
             console.error("Authorization error:", error);
           }
@@ -150,9 +146,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
         token.name = user.name;
         token.email = user.email;
+        token.role = user.role;
         token.picture = user.image;
       }
       return token;
@@ -160,9 +156,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as Role;
         session.user.name = token.name as string | null;
         session.user.email = token.email as string;
+        session.user.role = token.role as Role;
         session.user.image = token.picture as string | null;
       }
       return session;

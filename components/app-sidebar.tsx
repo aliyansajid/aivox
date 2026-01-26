@@ -15,9 +15,8 @@ import {
 } from "@/components/ui/sidebar";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { companyMenu } from "@/components/configs/company-menu";
-import { applicantMenu } from "@/components/configs/applicant-menu";
 import { Role } from "@/app/generated/prisma";
+import { applicantMenu, companyMenu } from "@/constants";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession();

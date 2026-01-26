@@ -223,3 +223,8 @@
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 50px 50px;
 }
+
+/* Hide badge and price in select trigger (closed state), show only in dropdown */
+[data-slot="select-trigger"] .select-dropdown-only {
+  display: none;
+}

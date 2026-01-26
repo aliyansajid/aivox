@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { Role } from "@/app/generated/prisma";
+import prisma from "@/lib/prisma";
 
 // Public routes that don't require authentication
 const publicRoutes = [
@@ -14,6 +15,9 @@ const publicRoutes = [
 
 // Auth routes that logged-in users shouldn't access
 const authRoutes = ["/login", "/sign-up", "/verify-otp", "/forgot-password"];
+
+// Onboarding routes
+const onboardingRoutes = ["/company/onboarding", "/applicant/onboarding"];
 
 // Helper function to check if path matches route pattern
 function isRouteMatch(pathname: string, routes: string[]): boolean {
@@ -64,9 +68,8 @@ export default auth(async function middleware(request: NextRequest) {
     }
 
     // Redirect to login with callback URL for protected routes
-    const callbackUrl = encodeURIComponent(pathname + request.nextUrl.search);
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", callbackUrl);
+    loginUrl.searchParams.set("callbackUrl", pathname + request.nextUrl.search);
 
     return NextResponse.redirect(loginUrl);
   }
@@ -77,6 +80,43 @@ export default auth(async function middleware(request: NextRequest) {
     if (isAuthRoute) {
       const defaultDashboard = getDefaultDashboard(userRole);
       return NextResponse.redirect(new URL(defaultDashboard, request.url));
+    }
+
+    // Check onboarding status (skip check if already on onboarding page)
+    const isOnboardingRoute = isRouteMatch(pathname, onboardingRoutes);
+
+    if (!isOnboardingRoute && session?.user?.id) {
+      try {
+        // Check if user needs to complete onboarding
+        if (userRole === Role.COMPANY) {
+          const company = await prisma.company.findUnique({
+            where: { userId: session.user.id },
+            select: { onboardingComplete: true },
+          });
+
+          if (company && !company.onboardingComplete) {
+            return NextResponse.redirect(
+              new URL("/company/onboarding", request.url),
+            );
+          }
+        } else if (userRole === Role.APPLICANT) {
+          const applicant = await prisma.applicant.findUnique({
+            where: { userId: session.user.id },
+            select: { onboardingComplete: true },
+          });
+
+          if (applicant && !applicant.onboardingComplete) {
+            return NextResponse.redirect(
+              new URL("/applicant/onboarding", request.url),
+            );
+          }
+        }
+      } catch (error) {
+        // Log error but don't block navigation
+        if (process.env.NODE_ENV === "development") {
+          console.error("Error checking onboarding status:", error);
+        }
+      }
     }
 
     // Redirect from home page to their dashboard

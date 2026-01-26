@@ -347,10 +347,13 @@ export async function loginWithCredentials(email: string, password: string) {
 }
 
 // Server action for OAuth sign-in
-export async function signInWithOAuth(provider: "google" | "linkedin") {
+export async function signInWithOAuth(
+  provider: "google" | "linkedin",
+  callbackUrl?: string | null,
+) {
   try {
     const { signIn } = await import("@/auth");
-    await signIn(provider, { redirectTo: "/dashboard" });
+    await signIn(provider, { redirectTo: callbackUrl || "/dashboard" });
 
     return {
       success: true,
@@ -364,6 +367,20 @@ export async function signInWithOAuth(provider: "google" | "linkedin") {
       success: false,
       error: "Failed to sign in. Please try again.",
     };
+  }
+}
+
+// Server action to sign out
+export async function handleSignOut() {
+  try {
+    const { signOut } = await import("@/auth");
+    await signOut({ redirectTo: "/login" });
+  } catch (error) {
+    // Don't log sensitive errors in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Sign out error:", error);
+    }
+    throw error;
   }
 }
 

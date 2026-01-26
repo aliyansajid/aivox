@@ -6,16 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { VerifyOTPForm } from "@/components/forms/verify-otp-form";
 
-function VerifyOTPContent() {
+const VerifyOTPPage = () => {
   const searchParams = useSearchParams();
-
-  // Get only email from URL params (data stored server-side)
   const email = searchParams.get("email") || "";
 
-  return <VerifyOTPForm email={email} />;
-}
-
-const VerifyOTPPage = () => {
   return (
     <Suspense
       fallback={
@@ -26,7 +20,7 @@ const VerifyOTPPage = () => {
         </Card>
       }
     >
-      <VerifyOTPContent />
+      <VerifyOTPForm email={email} />
     </Suspense>
   );
 };
