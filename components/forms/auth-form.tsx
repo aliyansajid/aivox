@@ -8,11 +8,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import {
-  sendSignupOTP,
-  loginWithCredentials,
-  signInWithOAuth,
-} from "@/app/actions/auth-actions";
+import { signIn } from "next-auth/react";
+import { sendSignupOTP, signInWithOAuth } from "@/app/actions/auth-actions";
 import {
   Card,
   CardHeader,
@@ -90,19 +87,24 @@ export const AuthForm = ({ type }: AuthFormProps) => {
     setIsLoading(true);
     try {
       if (isLogin) {
-        // Login with credentials
+        // Login with credentials using NextAuth client-side signIn
         const loginData = values as z.infer<typeof loginFormSchema>;
-        const result = await loginWithCredentials(
-          loginData.email,
-          loginData.password,
-        );
 
-        if (result.success) {
-          // Redirect to callback URL or role-based dashboard
-          const redirectUrl = callbackUrl || result.redirectUrl || "/";
+        const result = await signIn("credentials", {
+          email: loginData.email,
+          password: loginData.password,
+          redirect: false,
+        });
+
+        if (result?.error) {
+          toast.error("Invalid email or password");
+        } else if (result?.ok) {
+          // Redirect - the server-side layout will handle role-based access
+          const redirectUrl = callbackUrl || "/company";
           router.push(redirectUrl);
+          router.refresh();
         } else {
-          toast.error(result.error);
+          toast.error("Something went wrong. Please try again.");
         }
       } else {
         // Signup flow with OTP verification

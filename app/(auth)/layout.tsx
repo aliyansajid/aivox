@@ -12,9 +12,7 @@ export default function AuthLayout({
         <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
           <AudioLines color="white" />
         </div>
-        <span className="text-2xl font-bold text-[#0e0e0e] dark:text-primary">
-          AIVOX
-        </span>
+        <span className="text-2xl font-bold text-[#0e0e0e]">AIVOX</span>
       </Link>
       {children}
     </div>

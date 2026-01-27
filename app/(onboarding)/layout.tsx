@@ -3,9 +3,9 @@ import Link from "next/link";
 
 export default function OnboardingLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-linear-to-br from-orange-50 via-white to-amber-50 px-4 py-8">
       <Link href="/" className="flex items-center gap-2">
@@ -14,7 +14,6 @@ export default function OnboardingLayout({
         </div>
         <span className="text-2xl font-bold text-[#0e0e0e]">AIVOX</span>
       </Link>
-
       {children}
     </div>
   );

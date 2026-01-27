@@ -18,11 +18,13 @@ import { Form } from "../ui/form";
 import { Spinner } from "../ui/spinner";
 import { createAssistantSchema } from "@/schemas";
 import { toast } from "sonner";
+import { Assistant } from "@/app/generated/prisma";
+import { createAssistant } from "@/app/actions/assistant-actions";
 
 interface CreateAssistantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAssistantCreated: (name: string) => void;
+  onAssistantCreated: (assistant: Assistant) => void;
 }
 
 export function CreateAssistantDialog({
@@ -42,7 +44,31 @@ export function CreateAssistantDialog({
   const onSubmit = async (data: z.infer<typeof createAssistantSchema>) => {
     setIsLoading(true);
     try {
-      onAssistantCreated(data.name.trim());
+      // Create assistant with default values immediately
+      const result = await createAssistant({
+        name: data.name.trim(),
+        provider: "openai",
+        model: "gpt-5.2",
+        voiceProvider: "vapi",
+        voice: "Tara",
+        firstMessage: "Hello! How can I help you today?",
+        systemPrompt:
+          "You are a helpful AI assistant. Be professional, friendly, and concise in your responses.",
+        endMessage: "Thank you for the conversation. Have a great day!",
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to create assistant");
+        return;
+      }
+
+      toast.success(result.message);
+
+      // Pass the created assistant to the parent
+      if (result.data) {
+        onAssistantCreated(result.data as Assistant);
+      }
+
       form.reset();
       onOpenChange(false);
     } catch (error) {

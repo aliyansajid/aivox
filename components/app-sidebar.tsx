@@ -19,19 +19,26 @@ import { Role } from "@/app/generated/prisma";
 import { applicantMenu, companyMenu } from "@/constants";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
+  // Don't render guest data while session is loading
   const user = session?.user
     ? {
         name: session.user.name || "Unknown User",
         email: session.user.email || "",
         avatar: session.user.image || "",
       }
-    : {
-        name: "Guest",
-        email: "guest@example.com",
-        avatar: "",
-      };
+    : status === "loading"
+      ? {
+          name: "Loading...",
+          email: "",
+          avatar: "",
+        }
+      : {
+          name: "Guest",
+          email: "guest@example.com",
+          avatar: "",
+        };
 
   // Get menu items based on user role
   const menuItems =

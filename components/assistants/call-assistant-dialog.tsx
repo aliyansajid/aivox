@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Phone, PhoneOff, Mic, MicOff, PhoneCall } from "lucide-react";
+import { Phone, PhoneOff, PhoneCall } from "lucide-react";
 import { useVapi } from "@/hooks/use-vapi";
 import { Assistant } from "@/app/generated/prisma";
 import { toast } from "sonner";
@@ -27,30 +26,19 @@ export function CallAssistantDialog({
   onOpenChange,
   assistant,
 }: CallAssistantDialogProps) {
-  const [callStarted, setCallStarted] = useState(false);
-
-  const {
-    callStatus,
-    formattedDuration,
-    isMuted,
-    transcript,
-    startCall,
-    endCall,
-    toggleMute,
-  } = useVapi({
-    assistantId: assistant.vapiAssistantId,
-    onCallStart: () => {
-      setCallStarted(true);
-      toast.success("Call connected");
-    },
-    onCallEnd: () => {
-      setCallStarted(false);
-      toast.info("Call ended");
-    },
-    onError: (error) => {
-      toast.error(error);
-    },
-  });
+  const { callStatus, formattedDuration, transcript, startCall, endCall } =
+    useVapi({
+      assistantId: assistant.vapiAssistantId,
+      onCallStart: () => {
+        toast.success("Call connected");
+      },
+      onCallEnd: () => {
+        toast.info("Call ended");
+      },
+      onError: (error) => {
+        toast.error(error);
+      },
+    });
 
   const handleStartCall = () => {
     startCall();
@@ -58,14 +46,19 @@ export function CallAssistantDialog({
 
   const handleEndCall = () => {
     endCall();
-    setCallStarted(false);
   };
 
-  const handleClose = () => {
-    if (callStatus === "connected" || callStatus === "connecting") {
-      endCall();
+  const handleClose = (isOpen: boolean) => {
+    // Prevent closing if call is active
+    if (
+      !isOpen &&
+      (callStatus === "connected" || callStatus === "connecting")
+    ) {
+      toast.error("Please end the call before closing");
+      return;
     }
-    onOpenChange(false);
+
+    onOpenChange(isOpen);
   };
 
   const getStatusColor = () => {
@@ -136,36 +129,33 @@ export function CallAssistantDialog({
           </div>
 
           <div className="flex items-center justify-center gap-4">
-            {!callStarted ? (
+            {callStatus === "inactive" ||
+            callStatus === "disconnected" ||
+            callStatus === "error" ? (
               <Button
                 size="lg"
                 onClick={handleStartCall}
-                disabled={callStatus === "connecting"}
                 className="h-16 w-16 rounded-full"
               >
-                {callStatus === "connecting" ? <PhoneCall /> : <Phone />}
+                <Phone />
+              </Button>
+            ) : callStatus === "connecting" ? (
+              <Button
+                size="lg"
+                disabled
+                className="h-16 w-16 rounded-full"
+              >
+                <PhoneCall />
               </Button>
             ) : (
-              <>
-                <Button
-                  size="lg"
-                  variant={isMuted ? "destructive" : "outline"}
-                  onClick={toggleMute}
-                  className="h-16 w-16 rounded-full"
-                  disabled={callStatus !== "connected"}
-                >
-                  {isMuted ? <MicOff /> : <Mic />}
-                </Button>
-
-                <Button
-                  size="lg"
-                  variant="destructive"
-                  onClick={handleEndCall}
-                  className="h-16 w-16 rounded-full"
-                >
-                  <PhoneOff />
-                </Button>
-              </>
+              <Button
+                size="lg"
+                variant="destructive"
+                onClick={handleEndCall}
+                className="h-16 w-16 rounded-full"
+              >
+                <PhoneOff />
+              </Button>
             )}
           </div>
 
@@ -202,7 +192,7 @@ export function CallAssistantDialog({
             </div>
           )}
 
-          {!callStarted && callStatus === "inactive" && (
+          {callStatus === "inactive" && (
             <div className="text-center text-sm text-muted-foreground space-y-2">
               <p>Click the phone button to start a call with your assistant.</p>
               <p className="text-xs">

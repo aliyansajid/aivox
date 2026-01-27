@@ -25,16 +25,21 @@ export function useVapi({
 }: UseVapiOptions) {
   const [callStatus, setCallStatus] = useState<CallStatus>("inactive");
   const [duration, setDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState<
     Array<{ role: "assistant" | "user"; text: string; timestamp: Date }>
   >([]);
 
   const vapiRef = useRef<Vapi | null>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const callStartTimeRef = useRef<number | null>(null);
+  const isInitializedRef = useRef(false);
 
   // Initialize Vapi client
   useEffect(() => {
+    // Prevent double initialization in strict mode
+    if (isInitializedRef.current) return;
+    isInitializedRef.current = true;
+
     const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 
     if (!publicKey) {
@@ -50,23 +55,41 @@ export function useVapi({
 
     vapi.on("call-start", () => {
       setCallStatus("connected");
+      callStartTimeRef.current = Date.now();
+      setDuration(0);
       onCallStart?.();
+
+      // Clear any existing interval
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+        durationIntervalRef.current = null;
+      }
 
       // Start duration timer
       durationIntervalRef.current = setInterval(() => {
-        setDuration((prev) => prev + 1);
+        if (callStartTimeRef.current) {
+          const elapsed = Math.floor(
+            (Date.now() - callStartTimeRef.current) / 1000,
+          );
+          setDuration(elapsed);
+        }
       }, 1000);
     });
 
     vapi.on("call-end", () => {
       setCallStatus("disconnected");
-      onCallEnd?.();
+      callStartTimeRef.current = null;
 
       // Stop duration timer
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current);
         durationIntervalRef.current = null;
       }
+
+      // Call onCallEnd after a small delay to allow Vapi to clean up
+      setTimeout(() => {
+        onCallEnd?.();
+      }, 100);
     });
 
     vapi.on("speech-start", () => {
@@ -97,23 +120,55 @@ export function useVapi({
     });
 
     vapi.on("error", (error: any) => {
+      // Ignore "meeting ended" errors as they're expected after call ends
+      const errorMessage =
+        error?.message || error?.toString?.() || "Unknown error";
+
+      if (
+        errorMessage.toLowerCase().includes("meeting ended") ||
+        errorMessage.toLowerCase().includes("ejection")
+      ) {
+        // Normal call end, ignore this error
+        return;
+      }
+
+      // Handle specific errors
+      if (
+        errorMessage.toLowerCase().includes("bad sigauthz token") ||
+        errorMessage.toLowerCase().includes("authentication")
+      ) {
+        setCallStatus("error");
+        onError?.(
+          "Authentication error. Please check your Vapi configuration.",
+        );
+        return;
+      }
+
       setCallStatus("error");
       onError?.("An error occurred during the call. Please try again.");
     });
 
-    // Cleanup
+    // Cleanup only on unmount
     return () => {
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current);
+        durationIntervalRef.current = null;
       }
-      vapi.stop();
+      if (vapiRef.current) {
+        vapiRef.current.stop();
+      }
     };
-  }, [assistantId, onCallStart, onCallEnd, onError]);
+  }, []); // Empty deps - only run once on mount/unmount
 
   // Start call
   const startCall = useCallback(async () => {
     if (!vapiRef.current) {
       onError?.("Vapi client is not initialized");
+      return;
+    }
+
+    if (!assistantId || assistantId.trim() === "") {
+      onError?.("Invalid assistant ID");
       return;
     }
 
@@ -125,7 +180,19 @@ export function useVapi({
       await vapiRef.current.start(assistantId);
     } catch (error: any) {
       setCallStatus("error");
-      onError?.("Failed to start call. Please try again.");
+
+      // Provide specific error messages
+      const errorMessage = error?.message || error?.toString?.() || "";
+      if (
+        errorMessage.toLowerCase().includes("assistant") ||
+        errorMessage.toLowerCase().includes("not found")
+      ) {
+        onError?.("Assistant not found. Please save your changes first.");
+      } else if (errorMessage.toLowerCase().includes("authentication")) {
+        onError?.("Authentication error. Please check your Vapi API keys.");
+      } else {
+        onError?.("Failed to start call. Please try again.");
+      }
     }
   }, [assistantId, onError]);
 
@@ -135,21 +202,13 @@ export function useVapi({
 
     vapiRef.current.stop();
     setCallStatus("inactive");
+    callStartTimeRef.current = null;
 
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
       durationIntervalRef.current = null;
     }
   }, []);
-
-  // Toggle mute
-  const toggleMute = useCallback(() => {
-    if (!vapiRef.current) return;
-
-    const newMutedState = !isMuted;
-    vapiRef.current.setMuted(newMutedState);
-    setIsMuted(newMutedState);
-  }, [isMuted]);
 
   // Format duration as MM:SS
   const formattedDuration = `${Math.floor(duration / 60)
@@ -160,10 +219,8 @@ export function useVapi({
     callStatus,
     duration,
     formattedDuration,
-    isMuted,
     transcript,
     startCall,
     endCall,
-    toggleMute,
   };
 }

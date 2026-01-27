@@ -19,32 +19,31 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
   const [activeAssistant, setActiveAssistant] = useState<Assistant | null>(
     null,
   );
-  const [newAssistantName, setNewAssistantName] = useState<string | null>(null);
 
   // Set the most recent assistant as active by default
   useEffect(() => {
-    if (assistants.length > 0 && !activeAssistant && !newAssistantName) {
+    if (assistants.length > 0 && !activeAssistant) {
       // Sort by updatedAt and select the most recent
       const mostRecent = [...assistants].sort(
         (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
       )[0];
       setActiveAssistant(mostRecent);
     }
-  }, [assistants, activeAssistant, newAssistantName]);
+  }, [assistants, activeAssistant]);
 
   const handleAssistantSelect = (assistant: Assistant) => {
     setActiveAssistant(assistant);
-    setNewAssistantName(null);
   };
 
-  const handleAssistantCreate = (name: string) => {
-    // When creating a new assistant, show the form with the name
-    setNewAssistantName(name);
-    setActiveAssistant(null);
+  const handleAssistantCreate = (assistant: Assistant) => {
+    // Add the newly created assistant to the list
+    setAssistants([assistant, ...assistants]);
+    // Set it as active
+    setActiveAssistant(assistant);
   };
 
   const handleAssistantSave = (savedAssistant: Assistant) => {
-    // Update or add the assistant to the list
+    // Update the assistant in the list
     const existingIndex = assistants.findIndex(
       (a) => a.id === savedAssistant.id,
     );
@@ -54,13 +53,9 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
       const updated = [...assistants];
       updated[existingIndex] = savedAssistant;
       setAssistants(updated);
-    } else {
-      // Add new
-      setAssistants([savedAssistant, ...assistants]);
     }
 
     setActiveAssistant(savedAssistant);
-    setNewAssistantName(null);
   };
 
   const handleAssistantDelete = async (id: string) => {
@@ -122,10 +117,9 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
       </div>
 
       <div className="flex-1">
-        {activeAssistant || newAssistantName ? (
+        {activeAssistant ? (
           <AssistantForm
-            assistant={activeAssistant || undefined}
-            initialName={newAssistantName || undefined}
+            assistant={activeAssistant}
             onSave={handleAssistantSave}
           />
         ) : (

@@ -18,7 +18,7 @@ interface AssistantSidebarProps {
   assistants: Assistant[];
   activeAssistantId?: string;
   onAssistantSelect: (assistant: Assistant) => void;
-  onAssistantCreate: (name: string) => void;
+  onAssistantCreate: (assistant: Assistant) => void;
   onAssistantDelete?: (id: string) => void;
   onAssistantDuplicate?: (id: string) => void;
 }

@@ -30,22 +30,14 @@ import {
   BADGE_COLORS,
 } from "@/constants";
 import { Spinner } from "../ui/spinner";
-import {
-  createAssistant,
-  updateAssistant,
-} from "@/app/actions/assistant-actions";
+import { updateAssistant } from "@/app/actions/assistant-actions";
 
 interface AssistantFormProps {
-  assistant?: Assistant;
-  initialName?: string;
+  assistant: Assistant;
   onSave?: (assistant: Assistant) => void;
 }
 
-export function AssistantForm({
-  assistant,
-  initialName,
-  onSave,
-}: AssistantFormProps) {
+export function AssistantForm({ assistant, onSave }: AssistantFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
@@ -53,14 +45,14 @@ export function AssistantForm({
   const form = useForm<z.infer<typeof assistantSchema>>({
     resolver: zodResolver(assistantSchema),
     defaultValues: {
-      name: assistant?.name || initialName || "",
-      provider: assistant?.provider || "openai",
-      model: assistant?.model || "gpt-5.2",
-      voiceProvider: assistant?.voiceProvider || "vapi",
-      voice: assistant?.voice || "Tara",
-      firstMessage: assistant?.firstMessage || "",
-      systemPrompt: assistant?.systemPrompt || "",
-      endMessage: assistant?.endMessage || "",
+      name: assistant.name || "",
+      provider: assistant.provider || "openai",
+      model: assistant.model || "gpt-5.2",
+      voiceProvider: assistant.voiceProvider || "vapi",
+      voice: assistant.voice || "Tara",
+      firstMessage: assistant.firstMessage || "",
+      systemPrompt: assistant.systemPrompt || "",
+      endMessage: assistant.endMessage || "",
     },
   });
 
@@ -81,19 +73,17 @@ export function AssistantForm({
 
   // Effect to update form when assistant prop changes
   useEffect(() => {
-    if (assistant) {
-      form.reset({
-        name: assistant.name || "",
-        provider: assistant.provider || "openai",
-        model: assistant.model || "gpt-5.2",
-        voiceProvider: assistant.voiceProvider || "vapi",
-        voice: assistant.voice || "Tara",
-        firstMessage: assistant.firstMessage || "",
-        systemPrompt: assistant.systemPrompt || "",
-        endMessage: assistant.endMessage || "",
-      });
-    }
-  }, [assistant?.id, form, assistant]);
+    form.reset({
+      name: assistant.name || "",
+      provider: assistant.provider || "openai",
+      model: assistant.model || "gpt-5.2",
+      voiceProvider: assistant.voiceProvider || "vapi",
+      voice: assistant.voice || "Tara",
+      firstMessage: assistant.firstMessage || "",
+      systemPrompt: assistant.systemPrompt || "",
+      endMessage: assistant.endMessage || "",
+    });
+  }, [assistant.id, form, assistant]);
 
   // Helper to get Models options based on provider
   const modelOptions = useMemo(() => {
@@ -147,34 +137,22 @@ export function AssistantForm({
   const onSubmit = async (data: z.infer<typeof assistantSchema>) => {
     setIsSubmitting(true);
     try {
-      let result;
-
-      if (assistant?.id) {
-        // Update existing assistant
-        result = await updateAssistant(assistant.id, data);
-      } else {
-        // Create new assistant
-
-        result = await createAssistant(data);
-      }
+      // Update existing assistant
+      const result = await updateAssistant(assistant.id, data);
 
       if (!result.success) {
         toast.error(result.error || "Failed to save assistant");
         return;
       }
 
-      toast.success(assistant ? result.message : result.message);
+      toast.success(result.message);
 
       // Call onSave callback if provided
       if (onSave && result.data) {
         onSave(result.data as Assistant);
       }
 
-      if (!assistant) {
-        router.push("/company/assistants");
-      } else {
-        router.refresh();
-      }
+      router.refresh();
     } catch (error) {
       toast.error("Something went wrong");
     } finally {
@@ -183,7 +161,6 @@ export function AssistantForm({
   };
 
   const handleTestCall = () => {
-    if (!assistant) return;
     setIsCallDialogOpen(true);
   };
 
@@ -194,7 +171,7 @@ export function AssistantForm({
           <div className="flex items-center justify-between px-6 py-4 border-b bg-background sticky top-0 z-10">
             <div className="space-y-1">
               <h2 className="text-xl font-semibold tracking-tight">
-                {assistant?.name || initialName || "New Assistant"}
+                {assistant.name || "New Assistant"}
               </h2>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Badge variant="outline">
@@ -205,19 +182,13 @@ export function AssistantForm({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {assistant && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleTestCall}
-                >
-                  <Phone />
-                  Talk to Assistant
-                </Button>
-              )}
+              <Button type="button" variant="outline" onClick={handleTestCall}>
+                <Phone />
+                Talk to Assistant
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? <Spinner /> : <Save />}
-                {assistant ? "Publish Changes" : "Create Assistant"}
+                Publish Changes
               </Button>
             </div>
           </div>
@@ -404,13 +375,11 @@ export function AssistantForm({
       </Form>
 
       {/* Call Assistant Dialog */}
-      {assistant && (
-        <CallAssistantDialog
-          open={isCallDialogOpen}
-          onOpenChange={setIsCallDialogOpen}
-          assistant={assistant}
-        />
-      )}
+      <CallAssistantDialog
+        open={isCallDialogOpen}
+        onOpenChange={setIsCallDialogOpen}
+        assistant={assistant}
+      />
     </div>
   );
 }
