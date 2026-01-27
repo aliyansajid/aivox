@@ -9,6 +9,7 @@ import {
   duplicateAssistant,
 } from "@/app/actions/assistant-actions";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 interface AssistantsClientProps {
   initialAssistants: Assistant[];
@@ -19,6 +20,7 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
   const [activeAssistant, setActiveAssistant] = useState<Assistant | null>(
     null,
   );
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Set the most recent assistant as active by default
   useEffect(() => {
@@ -33,6 +35,7 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
 
   const handleAssistantSelect = (assistant: Assistant) => {
     setActiveAssistant(assistant);
+    setIsMobileMenuOpen(false);
   };
 
   const handleAssistantCreate = (assistant: Assistant) => {
@@ -40,6 +43,7 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
     setAssistants([assistant, ...assistants]);
     // Set it as active
     setActiveAssistant(assistant);
+    setIsMobileMenuOpen(false);
   };
 
   const handleAssistantSave = (savedAssistant: Assistant) => {
@@ -104,8 +108,9 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
   };
 
   return (
-    <div className="h-full flex">
-      <div className="w-80 shrink-0">
+    <div className="h-full flex overflow-hidden">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block w-80 shrink-0 h-full">
         <AssistantSidebar
           assistants={assistants}
           activeAssistantId={activeAssistant?.id}
@@ -116,14 +121,35 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
         />
       </div>
 
-      <div className="flex-1">
+      {/* Mobile Drawer */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="p-0 w-80 [&>button]:hidden">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Assistants Menu</SheetTitle>
+            <SheetDescription>
+              List of your AI assistants
+            </SheetDescription>
+          </SheetHeader>
+          <AssistantSidebar
+            assistants={assistants}
+            activeAssistantId={activeAssistant?.id}
+            onAssistantSelect={handleAssistantSelect}
+            onAssistantCreate={handleAssistantCreate}
+            onAssistantDelete={handleAssistantDelete}
+            onAssistantDuplicate={handleAssistantDuplicate}
+          />
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex-1 overflow-hidden h-full">
         {activeAssistant ? (
           <AssistantForm
             assistant={activeAssistant}
             onSave={handleAssistantSave}
+            onMobileMenuOpen={() => setIsMobileMenuOpen(true)}
           />
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full p-4">
             <div className="text-center space-y-3">
               <h3 className="text-lg font-medium text-muted-foreground">
                 No assistant selected
@@ -131,6 +157,12 @@ export function AssistantsClient({ initialAssistants }: AssistantsClientProps) {
               <p className="text-sm text-muted-foreground">
                 Select an assistant from the sidebar or create a new one
               </p>
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="lg:hidden text-primary underline"
+              >
+                Open Menu
+              </button>
             </div>
           </div>
         )}

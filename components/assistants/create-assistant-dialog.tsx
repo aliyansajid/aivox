@@ -20,6 +20,7 @@ import { createAssistantSchema } from "@/schemas";
 import { toast } from "sonner";
 import { Assistant } from "@/app/generated/prisma";
 import { createAssistant } from "@/app/actions/assistant-actions";
+import { ArrowRight, PlusCircle } from "lucide-react";
 
 interface CreateAssistantDialogProps {
   open: boolean;
@@ -116,7 +117,10 @@ export function CreateAssistantDialog({
                     Creating...
                   </>
                 ) : (
-                  "Continue"
+                  <>
+                    <PlusCircle />
+                    Create assitant
+                  </>
                 )}
               </Button>
             </DialogFooter>

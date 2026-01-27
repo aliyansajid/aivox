@@ -37,7 +37,11 @@ interface AssistantFormProps {
   onSave?: (assistant: Assistant) => void;
 }
 
-export function AssistantForm({ assistant, onSave }: AssistantFormProps) {
+export function AssistantForm({
+  assistant,
+  onSave,
+  onMobileMenuOpen,
+}: AssistantFormProps & { onMobileMenuOpen?: () => void }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
@@ -168,32 +172,83 @@ export function AssistantForm({ assistant, onSave }: AssistantFormProps) {
     <div className="flex flex-col h-full">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="contents">
-          <div className="flex items-center justify-between px-6 py-4 border-b bg-background sticky top-0 z-10">
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                {assistant.name || "New Assistant"}
-              </h2>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="outline">
-                  {PROVIDERS.find((p) => p.value === watchProvider)?.label}
-                </Badge>
-                <span>•</span>
-                <span>{watchModel}</span>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b bg-background sticky top-0 z-10">
+            <div className="flex items-center gap-4">
+              {onMobileMenuOpen && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  className="lg:hidden"
+                  onClick={onMobileMenuOpen}
+                >
+                  <Bot/>
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              )}
+              <div className="space-y-1">
+                <h2 className="text-lg sm:text-xl font-semibold tracking-tight truncate max-w-[150px] sm:max-w-xs">
+                  {assistant.name || "New Assistant"}
+                </h2>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline">
+                    {PROVIDERS.find((p) => p.value === watchProvider)?.label}
+                  </Badge>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="hidden sm:inline">{watchModel}</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" onClick={handleTestCall}>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="hidden xl:flex"
+                onClick={handleTestCall}
+              >
                 <Phone />
-                Talk to Assistant
+                Talk to assistant
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? <Spinner /> : <Save />}
-                Publish Changes
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="xl:hidden"
+                onClick={handleTestCall}
+              >
+                <Phone />
+                <span className="sr-only">Talk</span>
+              </Button>
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="hidden xl:flex"
+              >
+                {isSubmitting ? (
+                  <>
+                  <Spinner  />
+                  Publishing...</>
+                ) : (
+                <>  
+                  <Save  />
+                  Publish</>
+                )}
+                
+              </Button>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={isSubmitting}
+                className="xl:hidden"
+              >
+                {isSubmitting ? <Spinner /> : <Save  />}
+                <span className="sr-only">Publish</span>
               </Button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -203,7 +258,7 @@ export function AssistantForm({ assistant, onSave }: AssistantFormProps) {
                   <div>
                     <CardTitle className="text-lg">Model</CardTitle>
                     <CardDescription>
-                      Configure the underlying AI model and behavior
+                      Configure the underlying AI model
                     </CardDescription>
                   </div>
                 </div>
@@ -217,7 +272,7 @@ export function AssistantForm({ assistant, onSave }: AssistantFormProps) {
                   placeholder="e.g. Customer Support AI"
                 />
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-3">
                   <CustomFormField
                     control={form.control}
                     fieldType={FormFieldType.SELECT}
@@ -283,7 +338,7 @@ export function AssistantForm({ assistant, onSave }: AssistantFormProps) {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-3">
+              <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-3">
                 <CustomFormField
                   control={form.control}
                   fieldType={FormFieldType.SELECT}
