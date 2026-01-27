@@ -10,6 +10,7 @@ import {
 import { Control } from "react-hook-form";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { Slider } from "./ui/slider";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -27,6 +28,7 @@ enum FormFieldType {
   CHECKBOX = "checkbox",
   SELECT = "select",
   TEXTAREA = "textarea",
+  SLIDER = "slider",
 }
 
 interface SelectOption {
@@ -173,6 +175,25 @@ const RenderField = ({
           disabled={props.disabled}
           {...field}
         />
+      );
+
+    case FormFieldType.SLIDER:
+      return (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">0%</span>
+            <span className="font-medium">{field.value}%</span>
+            <span className="text-sm text-muted-foreground">100%</span>
+          </div>
+          <Slider
+            defaultValue={[field.value]}
+            max={100}
+            step={1}
+            onValueChange={(value) => field.onChange(value[0])}
+            disabled={props.disabled}
+            className={props.className}
+          />
+        </div>
       );
 
     default:

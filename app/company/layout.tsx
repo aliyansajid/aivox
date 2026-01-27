@@ -44,7 +44,9 @@ export default async function CompanyLayout({
           />
           <DynamicBreadcrumb />
         </header>
-        <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
+        <div className="flex flex-1 flex-col overflow-auto h-full">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

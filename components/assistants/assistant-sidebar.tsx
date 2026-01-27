@@ -55,7 +55,6 @@ export function AssistantSidebar({
             <Button
               size="icon"
               variant="outline"
-              className="h-8 w-8"
               onClick={() => setIsCreateDialogOpen(true)}
             >
               <Plus />

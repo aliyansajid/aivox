@@ -108,6 +108,7 @@ model Assistant {
 
   // Relations
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  jobs    Job[]
 
   @@map("assistants")
 }
@@ -135,23 +136,33 @@ model Applicant {
   @@map("applicants")
 }
 
+enum JobLocationType {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
 // Job model
 model Job {
-  id                 String         @id @default(uuid())
-  companyId          String         @map("company_id")
+  id                 String          @id @default(uuid())
+  companyId          String          @map("company_id")
+  assistantId        String?         @map("assistant_id") // Optional until assigned
   title              String
-  description        String?        @db.Text
+  description        String?         @db.Text
   location           String?
-  employmentType     EmploymentType @map("employment_type")
-  salaryRange        String?        @map("salary_range")
-  criteria           Json // {skills: [], experience: 3, education: "Bachelor", threshold: 90}
-  interviewQuestions Json?          @map("interview_questions") // [{question: "...", topic: "..."}]
-  status             JobStatus      @default(ACTIVE)
-  createdAt          DateTime       @default(now()) @map("created_at")
-  updatedAt          DateTime       @updatedAt @map("updated_at")
+  locationType       JobLocationType @default(ONSITE) @map("location_type")
+  employmentType     EmploymentType  @map("employment_type")
+  salaryRange        String?         @map("salary_range")
+  criteria           Json // {skills: [], experience: 3, education: "Bachelor"}
+  shortlistThreshold Int             @default(70) @map("shortlist_threshold") 
+  interviewQuestions Json?           @map("interview_questions")
+  status             JobStatus       @default(ACTIVE)
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
 
   // Relations
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assistant    Assistant?    @relation(fields: [assistantId], references: [id])
   applications Application[]
 
   @@map("jobs")

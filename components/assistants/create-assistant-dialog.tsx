@@ -112,10 +112,7 @@ export function CreateAssistantDialog({
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? (
-                  <>
-                    <Spinner />
-                    Creating...
-                  </>
+                  <Spinner />
                 ) : (
                   <>
                     <PlusCircle />

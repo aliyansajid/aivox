@@ -132,18 +132,6 @@ export const companyMenu = [
     title: "Jobs",
     url: "/company/jobs",
     icon: Briefcase,
-    items: [
-      {
-        title: "Post New Job",
-        url: "/company/jobs/new",
-        icon: Plus,
-      },
-      {
-        title: "All Jobs",
-        url: "/company/jobs",
-        icon: List,
-      },
-    ],
   },
   {
     title: "Applications",

@@ -182,12 +182,12 @@ export function AssistantForm({
                   className="lg:hidden"
                   onClick={onMobileMenuOpen}
                 >
-                  <Bot/>
+                  <Bot />
                   <span className="sr-only">Open menu</span>
                 </Button>
               )}
               <div className="space-y-1">
-                <h2 className="text-lg sm:text-xl font-semibold tracking-tight truncate max-w-[150px] sm:max-w-xs">
+                <h2 className="text-lg sm:text-xl font-semibold tracking-tight truncate max-w-37.5 sm:max-w-xs">
                   {assistant.name || "New Assistant"}
                 </h2>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -226,15 +226,13 @@ export function AssistantForm({
                 className="hidden xl:flex"
               >
                 {isSubmitting ? (
-                  <>
-                  <Spinner  />
-                  Publishing...</>
+                  <Spinner />
                 ) : (
-                <>  
-                  <Save  />
-                  Publish</>
+                  <>
+                    <Save />
+                    Publish
+                  </>
                 )}
-                
               </Button>
               <Button
                 type="submit"
@@ -242,7 +240,7 @@ export function AssistantForm({
                 disabled={isSubmitting}
                 className="xl:hidden"
               >
-                {isSubmitting ? <Spinner /> : <Save  />}
+                {isSubmitting ? <Spinner /> : <Save />}
                 <span className="sr-only">Publish</span>
               </Button>
             </div>

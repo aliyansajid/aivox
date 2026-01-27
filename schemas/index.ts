@@ -179,3 +179,35 @@ export const assistantSchema = z.object({
     .min(50, "System prompt must be at least 50 characters"),
   endMessage: z.string().optional(),
 });
+
+// Job Posting Schema
+export const jobSchema = z
+  .object({
+    title: z.string().min(1, "Job title is required"),
+    employmentType: z.enum([
+      "FULL_TIME",
+      "PART_TIME",
+      "CONTRACT",
+      "INTERNSHIP",
+    ]),
+    locationType: z.enum(["REMOTE", "ONSITE", "HYBRID"]),
+    location: z.string().optional(),
+    salaryRange: z.string().min(1, "Compensation is required"),
+    assistantId: z.string().min(1, "Please select an assistant"),
+    shortlistThreshold: z.number().min(0).max(100),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters"),
+  })
+  .refine(
+    (data) => {
+      if (data.locationType !== "REMOTE") {
+        return !!data.location && data.location.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Location is required for on-site/hybrid jobs",
+      path: ["location"],
+    },
+  );
