@@ -132,8 +132,23 @@ model Applicant {
   // Relations
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   applications Application[]
+  savedJobs    SavedJob[]
 
   @@map("applicants")
+}
+
+model SavedJob {
+  id          String    @id @default(uuid())
+  applicantId String    @map("applicant_id")
+  jobId       String    @map("job_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([applicantId, jobId])
+  @@map("saved_jobs")
 }
 
 enum JobLocationType {
@@ -164,6 +179,7 @@ model Job {
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   assistant    Assistant?    @relation(fields: [assistantId], references: [id])
   applications Application[]
+  savedBy      SavedJob[]
 
   @@map("jobs")
 }
