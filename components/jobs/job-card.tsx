@@ -6,21 +6,61 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Job } from "@/app/generated/prisma";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useJobContext } from "@/components/jobs/job-provider";
 
 interface JobCardProps {
   job: Job & { company: { name: string; logoUrl?: string | null } };
   variant?: "grid" | "list";
 }
 
-export function JobCard({ job, variant = "grid" }: JobCardProps) {
-  const router = useRouter();
+export function JobCard({
+  job,
+  variant = "grid",
+  isSaved = false,
+  onToggleSave,
+}: JobCardProps & {
+  isSaved?: boolean;
+  onToggleSave?: (id: string) => Promise<void>;
+}) {
   const isList = variant === "list";
+  const [saved, setSaved] = useState(isSaved);
+  const [isLoading, setIsLoading] = useState(false);
+  const { setSelectedJobId } = useJobContext();
+
+  // Sync state if prop changes (for filter updates etc)
+  useEffect(() => {
+    setSaved(isSaved);
+  }, [isSaved]);
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onToggleSave || isLoading) return;
+
+    setIsLoading(true);
+    // Optimistic update
+    setSaved(!saved);
+    try {
+      await onToggleSave(job.id);
+    } catch (error) {
+      // Revert on error
+      setSaved(saved);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCardClick = () => {
+    setSelectedJobId(job.id);
+  };
 
   if (isList) {
     return (
-      <Card className="py-0">
+      <Card
+        className="py-0 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={handleCardClick}
+      >
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between p-4 sm:p-6">
           <div className="flex items-start gap-2 w-full">
             <Avatar className="h-10 w-10">
@@ -49,8 +89,13 @@ export function JobCard({ job, variant = "grid" }: JobCardProps) {
             </div>
           </div>
           <div className="flex flex-row-reverse items-center justify-between sm:flex-col sm:items-end sm:gap-2 w-full sm:w-auto pl-[3.5rem] sm:pl-0">
-            <Button variant="outline" size="icon">
-              <Bookmark />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleSave}
+              disabled={isLoading}
+            >
+              <Bookmark className={saved ? "fill-current" : ""} />
             </Button>
             <span className="text-xs text-muted-foreground whitespace-nowrap">
               {formatDistanceToNow(new Date(job.createdAt), {
@@ -65,7 +110,10 @@ export function JobCard({ job, variant = "grid" }: JobCardProps) {
 
   // Grid View
   return (
-    <Card>
+    <Card
+      className="cursor-pointer hover:shadow-md transition-shadow"
+      onClick={handleCardClick}
+    >
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between">
           <Avatar className="h-10 w-10">
@@ -74,8 +122,13 @@ export function JobCard({ job, variant = "grid" }: JobCardProps) {
               {job.company.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <Button variant="outline" size="icon">
-            <Bookmark />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleSave}
+            disabled={isLoading}
+          >
+            <Bookmark className={saved ? "fill-primary stroke-primary" : ""} />
           </Button>
         </div>
         <div className="flex items-center gap-2">
@@ -99,9 +152,7 @@ export function JobCard({ job, variant = "grid" }: JobCardProps) {
           <span className="text-sm font-medium">{job.salaryRange}</span>
           <span className="text-xs text-muted-foreground">{job.location}</span>
         </div>
-        <Button onClick={() => router.push(`/applicant/jobs/${job.id}`)}>
-          Apply now
-        </Button>
+        <Button onClick={handleCardClick}>Apply now</Button>
       </CardFooter>
     </Card>
   );
