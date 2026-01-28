@@ -1,11 +1,8 @@
-import {
-  Prisma,
-  EmploymentType,
-  JobLocationType,
-} from "@/app/generated/prisma";
-import prisma from "@/lib/prisma";
-import { JobFilterSidebar } from "@/components/jobs/job-filter-sidebar";
-import { JobList } from "@/components/jobs/job-list";
+import { Suspense } from "react";
+import { JobFilterToolbar } from "@/components/jobs/job-filter-toolbar";
+import { JobResults } from "@/components/jobs/job-results";
+import { JobListSkeleton } from "@/components/jobs/job-list-skeleton";
+import { getJobFilterOptions } from "@/app/actions/applicant-actions";
 
 interface ApplicantJobsPageProps {
   searchParams: Promise<{
@@ -19,75 +16,30 @@ export default async function ApplicantJobsPage({
   searchParams,
 }: ApplicantJobsPageProps) {
   const params = await searchParams;
-  const { q, type, location } = params;
-
-  // Build filter conditions
-  const where: Prisma.JobWhereInput = {
-    status: "ACTIVE", // Only show active jobs
-  };
-
-  if (q) {
-    where.OR = [
-      { title: { contains: q, mode: "insensitive" } },
-      { description: { contains: q, mode: "insensitive" } },
-      { company: { name: { contains: q, mode: "insensitive" } } },
-    ];
-  }
-
-  if (type) {
-    const types = type
-      .split(",")
-      .filter((t) =>
-        Object.values(EmploymentType).includes(t as EmploymentType),
-      ) as EmploymentType[];
-
-    if (types.length > 0) {
-      where.employmentType = { in: types };
-    }
-  }
-
-  if (location) {
-    const locations = location
-      .split(",")
-      .filter((t) =>
-        Object.values(JobLocationType).includes(t as JobLocationType),
-      ) as JobLocationType[];
-
-    if (locations.length > 0) {
-      where.locationType = { in: locations };
-    }
-  }
-
-  const jobs = await prisma.job.findMany({
-    where,
-    include: {
-      company: {
-        select: {
-          name: true,
-          logoUrl: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const filterOptions = await getJobFilterOptions();
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight">Browse Jobs</h1>
-        <p className="text-muted-foreground text-sm">
-          Find your next opportunity from top companies.
-        </p>
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
+      {/* Search & Filter Toolbar - Now acts as the main header area */}
+      <div className="flex flex-col gap-6 pt-8 pb-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Connect with your next opportunity
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Discover roles at top technology companies that match your skills
+            and ambitions.
+          </p>
+        </div>
+
+        <JobFilterToolbar locations={filterOptions.locationTypes} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <aside className="lg:col-span-1">
-          <JobFilterSidebar />
-        </aside>
-
-        <section className="lg:col-span-3">
-          <JobList jobs={jobs} />
-        </section>
+      {/* Job List with Suspense */}
+      <div className="flex-1 overflow-auto min-h-0 pb-10">
+        <Suspense fallback={<JobListSkeleton />}>
+          <JobResults searchParams={params} />
+        </Suspense>
       </div>
     </div>
   );
